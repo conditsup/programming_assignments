@@ -18,7 +18,7 @@
 #define ATK_DONGSEOK 2
 #define ACTION_REST 0  // M의 행동
 #define ACTION_PROVOKE 1
-#define ACTION_PULL 2
+#define ACTION_PULL 3
 
 void printPattern(int length) {
     for (int i = 0; i < length; i++) {
@@ -58,6 +58,7 @@ int main(void) {
     int cPosition, zPosition, mPosition;
     int zTurnCount = 0;
     int cAggro = 1, mAggro = 1;
+    int zStunned = 0;
 
     printf("train length(%d~%d) >> ", LEN_MIN, LEN_MAX);
     if (scanf_s("%d", &LEN) != 1 || LEN < LEN_MIN || LEN > LEN_MAX) {
@@ -88,6 +89,7 @@ int main(void) {
     printf("\n");
 
     while (1) {
+        // 1페이즈: 이동
         int cMoveProb = 100 - PROB;
         int zMoveProb = PROB;
         int cPrevious = cPosition;
@@ -104,13 +106,7 @@ int main(void) {
         else {
             cAggro--;
         }
-
-        // Zombie의 이동 
-        moveProb = rand() % 100;
-        if (zTurnCount % 2 == 0 && moveProb < zMoveProb) {
-            zPosition--;
-        }
-        zTurnCount++;
+        printf("Citizen: %d -> %d (aggro: %d)\n", cPrevious, cPosition, cAggro);
 
         // AGGRO 수치 조정
         if (cAggro > AGGRO_MAX) cAggro = AGGRO_MAX;
@@ -118,69 +114,157 @@ int main(void) {
         if (mAggro > AGGRO_MAX) mAggro = AGGRO_MAX;
         if (mAggro < AGGRO_MIN) mAggro = AGGRO_MIN;
 
-        // 열차 상태 출력
-        printPatternWithCharacters(LEN, cPosition, zPosition, mPosition);
-
-        // c상태 출력
-        if (cPosition == 1) {
-            printf("SUCCESS!\ncitizen(s) escaped to the next train\n");
-            break;
-        }
-        else if (cPosition != cPrevious) {
-            printf("citizen: %d -> %d (aggro: %d)\n", cPrevious, cPosition, cAggro);
+        // Zombie의 이동
+        if (!zStunned) {
+            if (zTurnCount % 2 == 0) {
+                if (moveProb < zMoveProb) {
+                    int previousZPosition = zPosition;
+                    if (cAggro >= mAggro && abs(cPosition - zPosition) > 1) {
+                        zPosition--;
+                    }
+                    else if (mAggro > cAggro && abs(mPosition - zPosition) > 1) {
+                        zPosition++;
+                    }
+                    printf("Zombie: %d -> %d\n", previousZPosition, zPosition);
+                }
+                else {
+                    printf("Zombie: stay %d\n", zPosition);
+                }
+            }
+            else {
+                moveProb = rand() % 100;
+                if (moveProb < zMoveProb) {
+                    int previousZPosition = zPosition;
+                    if (cAggro >= mAggro && abs(cPosition - zPosition) > 1) {
+                        zPosition--;
+                    }
+                    else if (mAggro > cAggro && abs(mPosition - zPosition) > 1) {
+                        zPosition++;
+                    }
+                    printf("Zombie: %d -> %d\n", previousZPosition, zPosition);
+                }
+                else {
+                    printf("Zombie: stay (cannot move) %d\n", zPosition);
+                }
+            }
         }
         else {
-            printf("citizen: stay %d (aggro: %d)\n", cPosition, cAggro);
-        }
-
-        // z상태 출력
-        if (zTurnCount % 2 == 0) {
-            printf("zombie: stay %d (cannot move)\n", zPosition);
-        }
-        else if (zPosition != zPrevious) {
-            printf("zombie: %d -> %d\n", zPrevious, zPosition);
-        }
-        else {
-            printf("zombie: stay %d\n", zPosition);
+            zStunned = 0;
         }
 
         printf("\n");
 
+        // 열차 상태 출력 (이동 후)
+        printPatternWithCharacters(LEN, cPosition, zPosition, mPosition);
+
+
         // M의 이동 선택 및 상태 출력
-        printf("madongseok move (0: stay, 1: move left) >> ");
+        printf("M's movement ");
+        if (abs(mPosition - zPosition) == 1) {
+            printf("(0: stay) >> ");
+        }
+        else {
+            printf("(0: stay, 1: move left) >> ");
+        }
         if (scanf_s("%d", &mAction) != 1 || (mAction != MOVE_STAY && mAction != MOVE_LEFT)) {
             printf("Invalid input. Exit the program..\n");
             return 1;
         }
         if (mAction == MOVE_STAY) {
-            printf("madongseok stay (aggro: %d, stamina: %d)\n", mAggro, STM);
-            mAggro--;
+            printf("M stays (aggro: %d, stamina: %d)\n", mAggro, STM);
         }
         else if (mAction == MOVE_LEFT) {
             mPosition--;
             mAggro++;
             STM--;
-            printf("madongseok: %d -> %d (aggro: %d, stamina: %d)\n", mPrevious, mPosition, mAggro, STM);
+            printf("M: %d -> %d (aggro: %d, stamina: %d)\n", mPrevious, mPosition, mAggro, STM);
         }
 
-        // 열차 상태 출력
+
+
+
+        // 열차 상태 출력 (이동 후)
         printPatternWithCharacters(LEN, cPosition, zPosition, mPosition);
 
-        // m상태 출력
-        if (mPosition == mPrevious) {
-            printf("madongseok: stay %d (aggro: %d, stamina: %d)\n", mPosition, mAggro, STM);
+        // 2페이즈: 행동
+        // Citizen의 행동 /승리 조건임
+        printf("Citizen does nothing\n");
+        if (cPosition == 1) {
+            printf("YOU WIN!\n");
+            break;
+        }
+
+        // Zombie의 행동
+        if (abs(zPosition - cPosition) == 1 && abs(zPosition - mPosition) == 1) {
+            if (cAggro >= mAggro) {
+                printf("Zombie attacks citizen!\nGAME OVER!\n");
+                break;
+            }
+            else {
+                STM--;
+                printf("Zombie attacks M! (stamina: %d)\n", STM);
+                if (STM == STM_MIN) {
+                    printf("GAME OVER M!\n");
+                    break;
+                }
+            }
+        }
+        else if (abs(zPosition - cPosition) == 1) {
+            printf("Zombie attacks citizen!\nGAME OVER!\n");
+            break;
+        }
+        else if (abs(zPosition - mPosition) == 1) {
+            STM--;
+            printf("Zombie attacks M! (stamina: %d)\n", STM);
+            if (STM == STM_MIN) {
+                printf("GAME OVER M!\n");
+                break;
+            }
+        }
+        else {
+            printf("Zombie does nothing\n");
+        }
+
+        // M의 행동 선택 및 상태 출력
+        printf("M's action (0: rest, 1: provoke");
+        if (abs(mPosition - zPosition) <= 1) {
+            printf(", 3: pull");
+        }
+        printf(") >> ");
+        if (scanf_s("%d", &mAction) != 1 || (mAction != ACTION_REST && mAction != ACTION_PROVOKE && (mAction != ACTION_PULL || abs(mPosition - zPosition) > 1))) {
+            printf("Invalid input. Exit the program..\n");
+            return 1;
         }
 
         printf("\n");
 
-        // 게임 종료 조건
-        if (abs(cPosition - zPosition) == 1) {
-            printf("\nGAME OVER!\nCitizen(s) has(have) been attacked by a zombie\n");
-            break;
+        // M의 행동
+        if (mAction == ACTION_REST) {
+            STM++;
+            mAggro--;
+            printf("M rests (aggro: %d, stamina: %d)\n", mAggro, STM);
+        }
+        else if (mAction == ACTION_PROVOKE) {
+            mAggro = AGGRO_MAX;
+            printf("M provokes (aggro: %d, stamina: %d)\n", mAggro, STM);
+        }
+        else if (mAction == ACTION_PULL && abs(mPosition - zPosition) <= 1) {
+            mAggro += 2;
+            STM--;
+            moveProb = rand() % 100;
+            if (moveProb >= PROB) {
+                zStunned = 1;
+                printf("M pulls success (aggro: %d, stamina: %d)\n", mAggro, STM);
+            }
+            else {
+                printf("M pulls failed (aggro: %d, stamina: %d)\n", mAggro, STM);
+            }
         }
 
+
         printf("\n\n");
+        }
+
+        return 0;
     }
 
-    return 0;
-}
