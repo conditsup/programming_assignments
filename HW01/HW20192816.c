@@ -22,6 +22,7 @@ int cPosition, zPosition, mPosition;
 int cAggro = 1, mAggro = 1;
 int zTurnCount = 0;
 int zStunned = 0;
+int mAction;  // M의 행동을 저장할 변수
 
 // 기차 상태 출력 함수
 void printPattern(int length) {
@@ -60,7 +61,7 @@ void printPatternWithCharacters(int length, int cPos, int zPos, int mPos) {
 void initializeGame() {
     srand((unsigned int)time(NULL));
 
-    // 입력값이 범위를 벗어날 때까지 반복하여 입력 받음
+    // 입력값이 범위를 벗어날 때까지 반복하여 입력 받음 
     while (1) {
         printf("train length(%d~%d) >> ", LEN_MIN, LEN_MAX);
         if (scanf_s("%d", &LEN) != 1 || LEN < LEN_MIN || LEN > LEN_MAX) {
@@ -159,8 +160,6 @@ void moveZombie() {
 
 // M 이동 함수
 void moveM() {
-    int mAction;
-
     // 좀비와 붙어있을 경우
     if (abs(mPosition - zPosition) == 1) {
         // 이동하지 않도록 선택지 0번만 제공
@@ -195,18 +194,13 @@ void moveM() {
     }
 }
 
-
-
-
-
-
 // 시민 행동 처리 함수
-void actionC() {
-    printf("Citizen does nothing\n");
+void performCAction() {
+    // 시민의 행동은 아무것도 하지 않음
 }
 
 // 좀비 행동 처리 함수
-void actionZ() {
+void performZAction() {
     if (abs(zPosition - cPosition) == 1 && abs(zPosition - mPosition) == 1) {
         if (cAggro >= mAggro) {
             printf("Zombie attacks citizen!\nGAME OVER!\n");
@@ -234,34 +228,21 @@ void actionZ() {
         }
     }
     else {
-        printf("Zombie does nothing\n");
+        // 좀비가 아무것도 하지 않음
     }
 }
 
 // M 행동 처리 함수
-void actionM() {
-    int mAction;
-
+void performMAction() {
     // 붙어있는 경우 이동하지 않고 휴식만 선택 가능
     if (abs(mPosition - zPosition) == 1) {
         mAction = ACTION_REST;
     }
     else {
         while (1) {
-            printf("M's action (0: rest");
-            if (abs(mPosition - zPosition) <= 1) {
-                printf(", 1: provoke");
-            }
-            printf(") >> ");
-
-            if (scanf_s("%d", &mAction) != 1 || (mAction != ACTION_REST && (mAction != ACTION_PROVOKE || abs(mPosition - zPosition) > 1))) {
-                printf("Invalid input. ");
-                if (abs(mPosition - zPosition) <= 1) {
-                    printf("Please enter 0 or 1.\n");
-                }
-                else {
-                    printf("Please enter 0.\n");
-                }
+            printf("M's action (0: rest, 1: provoke) >> ");
+            if (scanf_s("%d", &mAction) != 1 || (mAction != ACTION_REST && mAction != ACTION_PROVOKE)) {
+                printf("Invalid input. Please enter 0 or 1.\n");
                 fflush(stdin);
             }
             else {
@@ -273,36 +254,60 @@ void actionM() {
     if (mAction == ACTION_REST) {
         STM++;
         mAggro--;
-        printf("M rests (aggro: %d, stamina: %d)\n", mAggro, STM);
     }
     else if (mAction == ACTION_PROVOKE) {
         mAggro = AGGRO_MAX;
+    }
+}
+
+// 시민 행동 결과 출력 함수
+void printCActionResult() {
+    printf("Citizen does nothing\n");
+}
+
+// 좀비 행동 결과 출력 함수
+void printZActionResult() {
+    if (abs(zPosition - cPosition) == 1 && abs(zPosition - mPosition) == 1) {
+        if (cAggro >= mAggro) {
+            printf("Zombie attacks citizen!\nGAME OVER!\n");
+        }
+        else {
+            printf("Zombie attacks M! (stamina: %d)\n", STM);
+        }
+    }
+    else if (abs(zPosition - cPosition) == 1) {
+        printf("Zombie attacks citizen!\nGAME OVER!\n");
+    }
+    else if (abs(zPosition - mPosition) == 1) {
+        printf("Zombie attacks M! (stamina: %d)\n", STM);
+    }
+    else {
+        printf("Zombie does nothing\n");
+    }
+}
+
+// M 행동 결과 출력 함수
+void printMActionResult() {
+    if (mAction == ACTION_REST) {
+        printf("M rests (aggro: %d, stamina: %d)\n", mAggro, STM);
+    }
+    else if (mAction == ACTION_PROVOKE) {
         printf("M provokes (aggro: %d, stamina: %d)\n", mAggro, STM);
     }
 }
 
-
-
 // 시민 이동 결과 출력 함수
 void printCitizenMoveResult() {
-    if (cPosition != cPosition + 1) {
-        printf("Citizen: %d -> %d (aggro: %d)\n", cPosition + 1, cPosition, cAggro);
-    } else {
-        printf("Citizen: stay %d (aggro: %d)\n", cPosition, cAggro);
-    }
+    printf("Citizen: %d -> %d (aggro: %d)\n", cPosition + 1, cPosition, cAggro);
 }
 
 // 좀비 이동 결과 출력 함수
 void printZombieMoveResult() {
-    if (zPosition != zPosition + 1) {
-        printf("Zombie: %d -> %d\n", zPosition + 1, zPosition);
-    } else {
-        printf("Zombie: stay %d\n", zPosition);
-    }
+    printf("Zombie: %d -> %d\n", zPosition + 1, zPosition);
 }
 
 // M 이동 결과 출력 함수
-void printMMoveResult(int mAction) {
+void printMMoveResult() {
     if (mAction == MOVE_LEFT && mPosition > 0) {
         printf("M: %d -> %d (aggro: %d, stamina: %d)\n", mPosition + 1, mPosition, mAggro, STM);
     }
@@ -310,12 +315,6 @@ void printMMoveResult(int mAction) {
         printf("M stays %d (aggro: %d, stamina: %d)\n", mPosition, mAggro, STM);
     }
 }
-
-
-
-
-
-
 
 // 메인 함수
 int main(void) {
@@ -331,15 +330,19 @@ int main(void) {
         printf("\n");
         moveM();
 
-
         // 이동 결과 출력
         printf("\n");
-
         printPatternWithCharacters(LEN, cPosition, zPosition, mPosition);
+        printMMoveResult();
 
-        actionC();
-        actionZ();
-        actionM();
+        performCAction();
+        performZAction();
+        performMAction();
+
+        // 행동 결과 출력
+        printCActionResult();
+        printZActionResult();
+        printMActionResult();
     }
 
     return 0;
