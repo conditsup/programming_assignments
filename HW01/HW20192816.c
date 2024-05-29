@@ -1,9 +1,9 @@
 /* 20192816 김도엽
-   부산헹(2) 프로젝트
-    2-1 함수 
-    2-2 수정
-    2-3 이동
-    2-4 행동
+   부산헹(2) 
+    2-1 함수 정리 
+    2-2 수정 / 입력 다시받기, 어그로, 체력, <이동><행동>페이즈 모두 완료
+    2-3 이동 / 조건및 예외처리 모두 완료
+    2-4 행동 / <행동>페이즈 순서, 좀비 행동 규칙, 체력감소, 게임오버, 탈출시 아웃트로 모두완료
 */
 
 #include <stdio.h>
@@ -36,6 +36,25 @@ int prevCPosition;
 int prevZPosition; 
 
 
+
+void ending() {
+    printf("\n\n\n");
+    printf(" ~:-     ::.   .~:::~.    ,::     -:-       ~::    .::-    ~:. -::   ::~     ~:,         ~:,    \n");
+    printf(" $@#,   ~@@   -$@@@@@$,   :@@     =@*       ;@@    ~@@=    @@: *@@   @@@.    #@!         #@;    \n");
+    printf("  @@~   @@:  -@@@=*#@@@   :@@     =@*        @@.   ;@@$.  :@#- *@@   @@@$    #@!         #@;    \n");
+    printf("  *@@  ;@#. .#@$.   -@@=  :@@     =@*        #@=   #@@@~  *@=  *@@   @@@@~   #@!         #@;    \n");
+    printf("  ,@@; $@!  :@@~     ;@@. :@@     =@*        ;@@   @$@@~  *@=  *@@   @@;@#.  #@!         #@;    \n");
+    printf("   !@#;@#.  ;@#      :@@: :@@     =@*        ~@@  ;@:*@! .$@:  *@@   @@.#@*  #@!         #@;    \n");
+    printf("   -#@$@!   !@#      ~@@! :@@     =@*        -@@: @@~.@@ -@@   *@@   @@.,#@~ #@!         #@;    \n");
+    printf("    $@@@    *@#      ~@@; :@@     =@*         =@* @#, @@ -@@   *@@   @@. !@$.#@!         #@;    \n");
+    printf("    .@@~    ;@#      :@@~ ~@@     =@*         *@*;@*  *@:;@:   *@@   @@.  $@;$@!         #@:    \n");
+    printf("     @@,    :@@:     *@@  .@@    ,#@!         :@$$@*  ~@##@    *@@   @@.  -@@#@!         ~:,    \n");
+    printf("     @@,     $@@,   ;@@:   @@$   :@@,          @@@@-  -@@@@    *@@   @@.   ~@@@!                \n");
+    printf("     @@,     ~#@@$=@@@=    !@@#=#@@=           @@@@   .$@@!    *@@   @@.   .$@@!        .#@;    \n");
+    printf("     @@,      -*@@@@@:.    .!@@@@@;            ;@@$    *@@~    *@@   @@.    -@@!        .#@;    \n");
+    printf("\n\n\n");
+
+}
 
 
 //2-1 각 함수들은 1개의 함수가 1가지의 작업만 하도록 설정 
@@ -191,7 +210,7 @@ void moveM() {
         printf("madongseok move (0: stay)>> ");
         while (1) {
             if (scanf_s("%d", &mAction) != 1 || mAction != MOVE_STAY) {
-            
+                printf("madongseok move (0: stay)>> ");
                 clearInputBuffer();
             }
             else {
@@ -206,7 +225,7 @@ void moveM() {
         printf("madongseok move (0: stay, 1: move left)>> ");
         while (1) {
             if (scanf_s("%d", &mAction) != 1 || (mAction != MOVE_STAY && mAction != MOVE_LEFT)) {
-               
+                printf("madongseok move (0: stay, 1: move left)>> ");
                 clearInputBuffer();
             }
             else {
@@ -258,7 +277,7 @@ void performMAction() {
         while (1) {
             int choice;
             if (scanf_s("%d", &choice) != 1 || (choice < 0 || choice > 2)) {
-              
+                printf("madongseok action(0: rest, 1: provoke, 2: pull)>> ");
                 clearInputBuffer();
             }
             else {
@@ -274,7 +293,7 @@ void performMAction() {
         while (1) {
             int choice;
             if (scanf_s("%d", &choice) != 1 || (choice != ACTION_REST && choice != ACTION_PROVOKE)) {
-                
+                printf("madongseok action(0: rest, 1: provoke)>> ");
                 clearInputBuffer();
             }
             else {
@@ -330,7 +349,10 @@ void printCActionResult() {
     if (cPosition == 1) {
         printPatternWithCharacters(LEN, cPosition, zPosition, mPosition);
             printf("YOU WIN! ···\n");
-            exit(0); 
+            Sleep(2000); 
+            system("cls");
+            ending();
+            exit(0);
     }
     else {
         printf("Citizen does nothing.\n");
@@ -442,7 +464,7 @@ void printMMoveResult() {
 
 //메인
 int main(void) {
-
+    
     printf("잠시후 기차가 출발합니다...\n\n");
     printf("                                             --         .--         --,\n");
     printf("       @@=       *@@.          ..      -@@,        ~@@.    @@@ @@#\n");
@@ -471,7 +493,7 @@ int main(void) {
 
     Sleep(2000);
     system("cls");
-
+    
     initializeGame();
     srand((unsigned int)time(NULL));
 
